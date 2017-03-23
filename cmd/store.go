@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/diasjorge/dynamokv/table"
 	"github.com/spf13/cobra"
 )
 
@@ -59,65 +60,6 @@ func init() {
 
 }
 
-func createTable(svc *dynamodb.DynamoDB, tableName *string) error {
-	_, err := svc.DescribeTable(&dynamodb.DescribeTableInput{TableName: tableName})
-	if err == nil {
-		return nil
-	}
-	_, err = svc.CreateTable(&dynamodb.CreateTableInput{TableName: tableName,
-		KeySchema: []*dynamodb.KeySchemaElement{
-			{
-				AttributeName: aws.String("Key"),
-				KeyType:       aws.String("HASH"),
-			},
-		},
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-			{
-				AttributeName: aws.String("Key"),
-				AttributeType: aws.String("S"),
-			},
-		},
-		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(2),
-			WriteCapacityUnits: aws.Int64(1),
-		},
-	})
-	if err != nil {
-		return err
-	}
-	if err = svc.WaitUntilTableExists(&dynamodb.DescribeTableInput{TableName: tableName}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeItems(svc *dynamodb.DynamoDB, tableName string, items map[string]string) error {
-	writeRequests := []*dynamodb.WriteRequest{}
-	for key, value := range items {
-		writeRequests = append(writeRequests, &dynamodb.WriteRequest{
-			PutRequest: &dynamodb.PutRequest{
-				Item: map[string]*dynamodb.AttributeValue{
-					"Key": {
-						S: aws.String(key),
-					},
-					"Value": {
-						S: aws.String(value),
-					},
-				},
-			},
-		})
-	}
-	_, err := svc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]*dynamodb.WriteRequest{
-			tableName: writeRequests,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // ```yml
 // YOUR_KEY: VALUE GOES HERE
 // ANOTHER_KEY_SERIALIZED:
@@ -150,20 +92,21 @@ func store(cmd *cobra.Command, args []string) error {
 	tableName := args[0]
 	configFile := args[1]
 
-	sess := session.Must(session.NewSession())
-
-	svc := dynamodb.New(sess, &aws.Config{
-		Region:   aws.String(region),
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	}))
+	dynamodb := dynamodb.New(sess, &aws.Config{
 		Endpoint: aws.String(endpointURL),
 	})
 	items, err := readConfigFile(configFile)
 	if err != nil {
 		return err
 	}
-	if err := createTable(svc, &tableName); err != nil {
+	table := table.NewTable(dynamodb, tableName)
+	if err := table.Create(); err != nil {
 		return err
 	}
-	if err := writeItems(svc, tableName, items); err != nil {
+	if err := table.Write(items); err != nil {
 		return err
 	}
 	return nil
