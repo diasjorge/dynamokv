@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -38,13 +37,13 @@ var RootCmd = &cobra.Command{
 	Short: "Use AWS dynamodb as a simple Key Value storage",
 	Long: `dynamokv is specially designed to store configuration in a dynamodb table
 and load them as environment variables`,
+	SilenceUsage: true,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(-1)
 	}
 }
