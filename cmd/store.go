@@ -24,6 +24,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/diasjorge/dynamokv/parser"
 	"github.com/diasjorge/dynamokv/serializer"
 	"github.com/diasjorge/dynamokv/table"
 	"github.com/spf13/cobra"
@@ -61,30 +63,6 @@ func init() {
 
 }
 
-// ```yml
-// YOUR_KEY: VALUE GOES HERE
-// ANOTHER_KEY_SERIALIZED:
-//   serialization: 'base64'
-//   value: |
-//     SOME LONG STRING
-//     WITH MULTIPLE LINES
-// ANOTHER_KEY_ENCRYPTED:
-//   serialization:
-//     kms:
-//       key: 'KMS_KEY_ID'
-//   value: YOUR SECRET VALUE
-// ANOTHER_KEY_FROM_FILE:
-//   value:
-//     file: 'path_to_file'
-// ```
-
-func readConfigFile(filename string) (map[string]string, error) {
-	return map[string]string{
-		"keyname":  "keyvalue",
-		"keyname1": "keyvalue1",
-	}, nil
-}
-
 func store(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return cmd.Usage()
@@ -99,7 +77,9 @@ func store(cmd *cobra.Command, args []string) error {
 	dynamodb := dynamodb.New(sess, &aws.Config{
 		Endpoint: aws.String(endpointURL),
 	})
-	items, err := readConfigFile(configFile)
+	kms := kms.New(sess)
+
+	parsedItems, err := parser.Parse(configFile)
 	if err != nil {
 		return err
 	}
