@@ -2,6 +2,7 @@ package parser
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v2"
@@ -62,7 +63,7 @@ func (rawValue *rawValue) parseValue() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		value = string(content[:])
+		value = strings.Trim(string(content[:]), "\n")
 	}
 	return value, nil
 }
