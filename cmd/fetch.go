@@ -32,7 +32,7 @@ import (
 
 // fetchCmd represents the fetch command
 var fetchCmd = &cobra.Command{
-	Use:   "fetch table-name",
+	Use:   "fetch TABLENAME",
 	Short: "Retrieve Key Value Pairs from a dynamodb table",
 	RunE:  fetch,
 }
@@ -53,14 +53,10 @@ func init() {
 
 func fetch(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return errors.New("table-name required")
+		return errors.New("TABLENAME required")
 	}
 
 	tableName := args[0]
-
-	// TODO: Work your own magic here
-	fmt.Printf("fetch called %v", args)
-	fmt.Printf("region %v", region)
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config:  aws.Config{Region: aws.String(region)},
@@ -80,9 +76,6 @@ func fetch(cmd *cobra.Command, args []string) error {
 	resp, err := svc.Scan(params)
 
 	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
-		fmt.Println(err.Error())
 		return err
 	}
 
@@ -92,32 +85,8 @@ func fetch(cmd *cobra.Command, args []string) error {
 	for _, item := range resp.Items {
 		key := *item["Key"].S
 		value := *item["Value"].S
-		// for itemName, itemValue := range item {
-		//         if itemName == "Key" {
-		//                 key = *itemValue.S
-		//         }
-		//         if itemName == "Value" {
-		//                 value = *itemValue.S
-		//         }
-		// }
 		fmt.Printf("%s=%s\n", key, value)
 	}
 
 	return nil
 }
-
-// package main
-
-// import (
-//         "fmt"
-// )
-
-// func main() {
-//         commits := map[string]int{
-// 		"Key": true,
-// 	}
-// 	re := regexp.MustCompile("(?i)key")
-// 	for m,
-// 	fmt.Printf(key)
-
-// }
