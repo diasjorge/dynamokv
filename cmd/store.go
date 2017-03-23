@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/diasjorge/dynamokv/serializer"
 	"github.com/diasjorge/dynamokv/table"
 	"github.com/spf13/cobra"
 )
@@ -102,6 +103,12 @@ func store(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	items, err := serializer.SerializeItems(kms, parsedItems)
+	if err != nil {
+		return err
+	}
+
 	table := table.NewTable(dynamodb, tableName)
 	if err := table.Create(); err != nil {
 		return err
