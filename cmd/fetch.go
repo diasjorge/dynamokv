@@ -23,12 +23,19 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/diasjorge/dynamokv/models"
+	"github.com/diasjorge/dynamokv/serializer"
+	"github.com/diasjorge/dynamokv/table"
 	"github.com/spf13/cobra"
 )
+
+var export, deserialize bool
 
 // fetchCmd represents the fetch command
 var fetchCmd = &cobra.Command{
@@ -39,16 +46,8 @@ var fetchCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(fetchCmd)
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// fetchCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// fetchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	fetchCmd.Flags().BoolVarP(&export, "export", "", false, "Export variables")
+	fetchCmd.Flags().BoolVarP(&deserialize, "deserialize", "", true, "Deserialize items")
 }
 
 func fetch(cmd *cobra.Command, args []string) error {
@@ -63,30 +62,37 @@ func fetch(cmd *cobra.Command, args []string) error {
 		Profile: profile,
 	}))
 
-	svc := dynamodb.New(sess, &aws.Config{Endpoint: aws.String(endpointURL)})
+	dynamodbSvc := dynamodb.New(sess, &aws.Config{Endpoint: aws.String(endpointURL)})
 
-	params := &dynamodb.ScanInput{
-		TableName: aws.String(tableName), // Required
-		AttributesToGet: []*string{
-			aws.String("Key"),
-			aws.String("Value"),
-		},
-		ConsistentRead: aws.Bool(true),
-	}
-	resp, err := svc.Scan(params)
+	kmsSvc := kms.New(sess)
 
+	table := table.NewTable(dynamodbSvc, tableName)
+
+	items, err := table.Read()
 	if err != nil {
 		return err
 	}
 
-	// Pretty-print the response data.
-	// fmt.Println(resp)
+	items, err = serializer.DeserializeItems(kmsSvc, items, deserialize)
+	if err != nil {
+		return err
+	}
 
-	for _, item := range resp.Items {
-		key := *item["Key"].S
-		value := *item["Value"].S
-		fmt.Printf("%s=%s\n", key, value)
+	for _, item := range items {
+		printItem(item)
 	}
 
 	return nil
+}
+
+func printItem(item *models.Item) {
+	format := "%s=\"%s\"\n"
+	if export {
+		format = "export " + format
+	}
+	fmt.Printf(format, item.Key, escape(item.Value))
+}
+
+func escape(value string) string {
+	return strings.Replace(value, "\"", "\\\"", -1)
 }

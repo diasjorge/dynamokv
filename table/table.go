@@ -3,6 +3,7 @@ package table
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/diasjorge/dynamokv/models"
 )
 
 type Table struct {
@@ -49,17 +50,20 @@ func (table *Table) Create() error {
 	return nil
 }
 
-func (table *Table) Write(items map[string]string) error {
+func (table *Table) Write(items []*models.Item) error {
 	writeRequests := []*dynamodb.WriteRequest{}
-	for key, value := range items {
+	for _, item := range items {
 		writeRequests = append(writeRequests, &dynamodb.WriteRequest{
 			PutRequest: &dynamodb.PutRequest{
 				Item: map[string]*dynamodb.AttributeValue{
 					"Key": {
-						S: aws.String(key),
+						S: aws.String(item.Key),
 					},
 					"Value": {
-						S: aws.String(value),
+						S: aws.String(item.Value),
+					},
+					"Serialization": {
+						S: aws.String(item.Serialization),
 					},
 				},
 			},
@@ -74,4 +78,42 @@ func (table *Table) Write(items map[string]string) error {
 		return err
 	}
 	return nil
+}
+
+func (table *Table) Read() ([]*models.Item, error) {
+	params := &dynamodb.ScanInput{
+		TableName: table.Name,
+		AttributesToGet: []*string{
+			aws.String("Key"),
+			aws.String("Value"),
+			aws.String("Serialization"),
+		},
+		ConsistentRead: aws.Bool(true),
+	}
+	resp, err := table.svc.Scan(params)
+	if err != nil {
+		return nil, err
+	}
+	items := []*models.Item{}
+	for _, item := range resp.Items {
+		key, ok := item["Key"]
+		if !ok {
+			continue
+		}
+		value, ok := item["Value"]
+		if !ok {
+			continue
+		}
+		serializationType := "plain"
+		serialization, ok := item["Serialization"]
+		if ok {
+			serializationType = *serialization.S
+		}
+		items = append(items, &models.Item{
+			Key:           *key.S,
+			Value:         *value.S,
+			Serialization: serializationType,
+		})
+	}
+	return items, nil
 }

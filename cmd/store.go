@@ -71,25 +71,26 @@ func store(cmd *cobra.Command, args []string) error {
 	tableName := args[0]
 	configFile := args[1]
 
-	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config:  aws.Config{Region: aws.String(region)},
+		Profile: profile,
 	}))
-	dynamodb := dynamodb.New(sess, &aws.Config{
-		Endpoint: aws.String(endpointURL),
-	})
-	kms := kms.New(sess)
+
+	dynamodbSvc := dynamodb.New(sess, &aws.Config{Endpoint: aws.String(endpointURL)})
+
+	kmsSvc := kms.New(sess)
 
 	parsedItems, err := parser.Parse(configFile)
 	if err != nil {
 		return err
 	}
 
-	items, err := serializer.SerializeItems(kms, parsedItems)
+	items, err := serializer.SerializeItems(kmsSvc, parsedItems)
 	if err != nil {
 		return err
 	}
 
-	table := table.NewTable(dynamodb, tableName)
+	table := table.NewTable(dynamodbSvc, tableName)
 	if err := table.Create(); err != nil {
 		return err
 	}
