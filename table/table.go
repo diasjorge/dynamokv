@@ -90,30 +90,37 @@ func (table *Table) Read() ([]*models.Item, error) {
 		},
 		ConsistentRead: aws.Bool(true),
 	}
-	resp, err := table.svc.Scan(params)
+	items := []*models.Item{}
+
+	err := table.svc.ScanPages(
+		params,
+		func(resp *dynamodb.ScanOutput, lastPage bool) bool {
+			for _, item := range resp.Items {
+				key, ok := item["Key"]
+				if !ok {
+					continue
+				}
+				value, ok := item["Value"]
+				if !ok {
+					continue
+				}
+				serializationType := "plain"
+				serialization, ok := item["Serialization"]
+				if ok {
+					serializationType = *serialization.S
+				}
+				items = append(items, &models.Item{
+					Key:           *key.S,
+					Value:         *value.S,
+					Serialization: serializationType,
+				})
+			}
+			return true
+		},
+	)
+
 	if err != nil {
 		return nil, err
-	}
-	items := []*models.Item{}
-	for _, item := range resp.Items {
-		key, ok := item["Key"]
-		if !ok {
-			continue
-		}
-		value, ok := item["Value"]
-		if !ok {
-			continue
-		}
-		serializationType := "plain"
-		serialization, ok := item["Serialization"]
-		if ok {
-			serializationType = *serialization.S
-		}
-		items = append(items, &models.Item{
-			Key:           *key.S,
-			Value:         *value.S,
-			Serialization: serializationType,
-		})
 	}
 	return items, nil
 }
