@@ -11,6 +11,9 @@ import (
 	"github.com/diasjorge/dynamokv/models"
 )
 
+var export, deserialize bool
+var endpointURL, region, profile string
+
 // commandError is an error used to signal different error situations in command handling.
 type commandError struct {
 	s         string
@@ -50,4 +53,16 @@ func newSession() *Session {
 		DynamoDB: dynamodbSvc,
 		KMS:      kmsSvc,
 	}
+}
+
+func printItem(item *models.Item, export bool) {
+	format := "%s='%s'\n"
+	if export {
+		format = "export " + format
+	}
+	fmt.Printf(format, item.Key, escape(item.Value))
+}
+
+func escape(value string) string {
+	return strings.Replace(value, "'", "'\\''", -1)
 }

@@ -22,15 +22,11 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/diasjorge/dynamokv/serializer"
 	"github.com/diasjorge/dynamokv/table"
 	"github.com/spf13/cobra"
 )
-
-var export, deserialize bool
 
 // fetchCmd represents the fetch command
 var fetchCmd = &cobra.Command{
@@ -67,20 +63,8 @@ func fetch(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, item := range items {
-		printItem(item)
+		printItem(item, export)
 	}
 
 	return nil
-}
-
-func printItem(item *models.Item) {
-	format := "%s='%s'\n"
-	if export {
-		format = "export " + format
-	}
-	fmt.Printf(format, item.Key, escape(item.Value))
-}
-
-func escape(value string) string {
-	return strings.Replace(value, "'", "'\\''", -1)
 }

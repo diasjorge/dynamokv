@@ -27,10 +27,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var endpointURL string
-var region string
-var profile string
-
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "dynamokv",
