@@ -86,7 +86,7 @@ func fetch(cmd *cobra.Command, args []string) error {
 }
 
 func printItem(item *models.Item) {
-	format := "%s=\"%s\"\n"
+	format := "%s='%s'\n"
 	if export {
 		format = "export " + format
 	}
@@ -94,5 +94,5 @@ func printItem(item *models.Item) {
 }
 
 func escape(value string) string {
-	return strings.Replace(value, "\"", "\\\"", -1)
+	return strings.Replace(value, "'", "'\\''", -1)
 }
