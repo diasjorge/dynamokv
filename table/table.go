@@ -1,6 +1,8 @@
 package table
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/diasjorge/dynamokv/models"
@@ -88,32 +90,18 @@ func (table *Table) Read() ([]*models.Item, error) {
 			aws.String("Value"),
 			aws.String("Serialization"),
 		},
-		ConsistentRead: aws.Bool(true),
 	}
 	items := []*models.Item{}
 
 	err := table.svc.ScanPages(
 		params,
 		func(resp *dynamodb.ScanOutput, lastPage bool) bool {
-			for _, item := range resp.Items {
-				key, ok := item["Key"]
-				if !ok {
+			for _, dynamodbItem := range resp.Items {
+				item, err := models.NewItemFromDynamoDB(dynamodbItem)
+				if err != nil {
 					continue
 				}
-				value, ok := item["Value"]
-				if !ok {
-					continue
-				}
-				serializationType := "plain"
-				serialization, ok := item["Serialization"]
-				if ok {
-					serializationType = *serialization.S
-				}
-				items = append(items, &models.Item{
-					Key:           *key.S,
-					Value:         *value.S,
-					Serialization: serializationType,
-				})
+				items = append(items, item)
 			}
 			return true
 		},
@@ -123,4 +111,36 @@ func (table *Table) Read() ([]*models.Item, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+func (table *Table) Get(key string) (*models.Item, error) {
+	params := &dynamodb.QueryInput{
+		TableName: table.Name,
+		AttributesToGet: []*string{
+			aws.String("Key"),
+			aws.String("Value"),
+			aws.String("Serialization"),
+		},
+		KeyConditions: map[string]*dynamodb.Condition{
+			"Key": {
+				ComparisonOperator: aws.String("EQ"),
+				AttributeValueList: []*dynamodb.AttributeValue{
+					{
+						S: aws.String(key),
+					},
+				},
+			},
+		},
+	}
+
+	resp, err := table.svc.Query(params)
+	if err != nil {
+		return nil, err
+	}
+
+	if *resp.Count != 1 {
+		return nil, fmt.Errorf("error querying for Item with Key \"%v\": %v occurrences found", key, *resp.Count)
+	}
+
+	return models.NewItemFromDynamoDB(resp.Items[0])
 }

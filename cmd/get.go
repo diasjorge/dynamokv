@@ -28,43 +28,42 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fetchCmd represents the fetch command
-var fetchCmd = &cobra.Command{
-	Use:   "fetch TABLENAME",
-	Short: "Retrieve Key Value Pairs from a dynamodb table",
-	RunE:  fetch,
+// getCmd represents the get command
+var getCmd = &cobra.Command{
+	Use:   "get TABLENAME KEY",
+	Short: "Retrieve Value of Key",
+	RunE:  get,
 }
 
 func init() {
-	RootCmd.AddCommand(fetchCmd)
-	fetchCmd.Flags().BoolVarP(&export, "export", "", false, "Export variables")
-	fetchCmd.Flags().BoolVarP(&deserialize, "deserialize", "", true, "Deserialize items")
+	RootCmd.AddCommand(getCmd)
+
+	getCmd.Flags().BoolVarP(&export, "export", "", false, "Export variables")
+	getCmd.Flags().BoolVarP(&deserialize, "deserialize", "", true, "Deserialize items")
 }
 
-func fetch(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return errors.New("TABLENAME required")
+func get(cmd *cobra.Command, args []string) error {
+	if len(args) != 2 {
+		return errors.New("TABLENAME KEY required")
 	}
 
 	tableName := args[0]
+	key := args[1]
 
 	session := newSession()
 
 	table := table.NewTable(session.DynamoDB, tableName)
 
-	items, err := table.Read()
+	item, err := table.Get(key)
 	if err != nil {
 		return err
 	}
 
-	err = serializer.DeserializeItems(session.KMS, items, deserialize)
+	err = serializer.DeserializeItem(session.KMS, item, deserialize)
 	if err != nil {
 		return err
 	}
 
-	for _, item := range items {
-		printItem(item, export)
-	}
-
+	printItem(item, export)
 	return nil
 }

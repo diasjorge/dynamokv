@@ -26,17 +26,27 @@ func SerializeItems(svc *kms.KMS, items []*parser.Item) ([]*models.Item, error) 
 	return result, nil
 }
 
-func DeserializeItems(svc *kms.KMS, items []*models.Item, deserilizeItems bool) ([]*models.Item, error) {
-	if deserilizeItems {
+func DeserializeItems(svc *kms.KMS, items []*models.Item, deserializeItem bool) error {
+	if deserializeItem {
 		for _, item := range items {
-			value, err := deserialize(svc, item)
+			err := DeserializeItem(svc, item, deserializeItem)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			item.Value = value
 		}
 	}
-	return items, nil
+	return nil
+}
+
+func DeserializeItem(svc *kms.KMS, item *models.Item, deserializeItem bool) error {
+	if deserializeItem {
+		value, err := deserialize(svc, item)
+		if err != nil {
+			return err
+		}
+		item.Value = value
+	}
+	return nil
 }
 
 func encodeBase64(data []byte) string {
