@@ -21,10 +21,6 @@
 package cmd
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/diasjorge/dynamokv/parser"
 	"github.com/diasjorge/dynamokv/serializer"
 	"github.com/diasjorge/dynamokv/table"
@@ -71,26 +67,19 @@ func store(cmd *cobra.Command, args []string) error {
 	tableName := args[0]
 	configFile := args[1]
 
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		Config:  aws.Config{Region: aws.String(region)},
-		Profile: profile,
-	}))
-
-	dynamodbSvc := dynamodb.New(sess, &aws.Config{Endpoint: aws.String(endpointURL)})
-
-	kmsSvc := kms.New(sess)
+	session := newSession()
 
 	parsedItems, err := parser.Parse(configFile)
 	if err != nil {
 		return err
 	}
 
-	items, err := serializer.SerializeItems(kmsSvc, parsedItems)
+	items, err := serializer.SerializeItems(session.KMS, parsedItems)
 	if err != nil {
 		return err
 	}
 
-	table := table.NewTable(dynamodbSvc, tableName)
+	table := table.NewTable(session.DynamoDB, tableName)
 	if err := table.Create(); err != nil {
 		return err
 	}
