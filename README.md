@@ -13,6 +13,8 @@ dynamokv set TABLENAME KEY VALUE
 
 dynamokv get TABLENAME KEY
 
+dynamokv template TABLENAME TEMPLATEFILE
+
 ## Key Value File Format
 
 ```yaml
@@ -32,5 +34,13 @@ READ_FILE_KEY:
   value:
     file: 'config'
 ```
+
+## Template File Format
+
+```
+The value for KEY_NAME is {{KEY_NAME}}
+The value without deserializing for KEY_NAME is {{RAW:KEY_NAME}}
+```
+
 
 Supported Serialization types: base64 and kms. For KMS you need to provide key as option.

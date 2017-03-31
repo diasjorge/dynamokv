@@ -63,11 +63,3 @@ func NewParsedItemFromDynamoDB(dynamodbItem map[string]*dynamodb.AttributeValue)
 	}
 	return item, nil
 }
-
-// func NewItemFromVars(key, value string, options map[string]string) (*Item, error) {
-// 	return &Item{
-// 		Key:           key,
-// 		Value:         value,
-// 		Serialization: serializationType,
-// 	}, nil
-// }
