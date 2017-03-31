@@ -52,12 +52,12 @@ func fetch(cmd *cobra.Command, args []string) error {
 
 	table := table.NewTable(session.DynamoDB, tableName)
 
-	items, err := table.Read()
+	parsedItems, err := table.Read()
 	if err != nil {
 		return err
 	}
 
-	err = serializer.DeserializeItems(session.KMS, items, deserialize)
+	items, err := serializer.DeserializeItems(session.KMS, parsedItems, deserialize)
 	if err != nil {
 		return err
 	}

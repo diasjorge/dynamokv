@@ -4,42 +4,22 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/diasjorge/dynamokv/models"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v2"
 )
-
-type Item struct {
-	Key   string
-	Value *ItemValue
-}
-
-type ItemValue struct {
-	Value         string
-	Serialization *Serialization
-}
-
-type Serialization struct {
-	Type    string
-	Options map[string]string
-}
-
-func newSerialization() *Serialization {
-	return &Serialization{Type: "plain"}
-}
 
 type rawValue struct {
 	RawSerialization interface{} `mapstructure:"serialization"`
 	RawValue         interface{} `mapstructure:"value"`
 }
 
-func (rawValue *rawValue) parseSerialization() (*Serialization, error) {
-	serialization := newSerialization()
+func (rawValue *rawValue) parseSerialization() (*models.Serialization, error) {
+	serialization := models.NewSerialization()
 
 	switch rawValue.RawSerialization.(type) {
 	case string:
-		serialization = &Serialization{
-			Type: rawValue.RawSerialization.(string),
-		}
+		serialization.Type = rawValue.RawSerialization.(string)
 	case interface{}:
 		if err := mapstructure.Decode(rawValue.RawSerialization, &serialization); err != nil {
 			return nil, err
@@ -68,7 +48,7 @@ func (rawValue *rawValue) parseValue() (string, error) {
 	return value, nil
 }
 
-func (rawValue *rawValue) Parse() (*ItemValue, error) {
+func (rawValue *rawValue) Parse() (*models.ParsedItemValue, error) {
 	serialization, err := rawValue.parseSerialization()
 	if err != nil {
 		return nil, err
@@ -77,14 +57,14 @@ func (rawValue *rawValue) Parse() (*ItemValue, error) {
 	if err != nil {
 		return nil, err
 	}
-	itemValue := &ItemValue{Serialization: serialization, Value: value}
+	itemValue := &models.ParsedItemValue{Serialization: serialization, Value: value}
 	return itemValue, nil
 }
 
 // Parse returns Items from yaml file
-func Parse(filename string) ([]*Item, error) {
+func Parse(filename string) ([]*models.ParsedItem, error) {
 	var keyVal map[string]interface{}
-	var items []*Item
+	var items []*models.ParsedItem
 
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -95,13 +75,11 @@ func Parse(filename string) ([]*Item, error) {
 		return nil, err
 	}
 	for key, value := range keyVal {
-		item := &Item{Key: key}
+		item := models.NewParsedItem()
+		item.Key = key
 		switch value.(type) {
 		case string:
-			item.Value = &ItemValue{
-				Value:         value.(string),
-				Serialization: newSerialization(),
-			}
+			item.Value.Value = value.(string)
 		case interface{}:
 			var rawValue rawValue
 			if err := mapstructure.Decode(value, &rawValue); err != nil {

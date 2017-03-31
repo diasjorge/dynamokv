@@ -82,7 +82,7 @@ func (table *Table) Write(items []*models.Item) error {
 	return nil
 }
 
-func (table *Table) Read() ([]*models.Item, error) {
+func (table *Table) Read() ([]*models.ParsedItem, error) {
 	params := &dynamodb.ScanInput{
 		TableName: table.Name,
 		AttributesToGet: []*string{
@@ -91,13 +91,13 @@ func (table *Table) Read() ([]*models.Item, error) {
 			aws.String("Serialization"),
 		},
 	}
-	items := []*models.Item{}
+	items := []*models.ParsedItem{}
 
 	err := table.svc.ScanPages(
 		params,
 		func(resp *dynamodb.ScanOutput, lastPage bool) bool {
 			for _, dynamodbItem := range resp.Items {
-				item, err := models.NewItemFromDynamoDB(dynamodbItem)
+				item, err := models.NewParsedItemFromDynamoDB(dynamodbItem)
 				if err != nil {
 					continue
 				}
@@ -113,7 +113,7 @@ func (table *Table) Read() ([]*models.Item, error) {
 	return items, nil
 }
 
-func (table *Table) Get(key string) (*models.Item, error) {
+func (table *Table) Get(key string) (*models.ParsedItem, error) {
 	params := &dynamodb.QueryInput{
 		TableName: table.Name,
 		AttributesToGet: []*string{
@@ -142,5 +142,5 @@ func (table *Table) Get(key string) (*models.Item, error) {
 		return nil, fmt.Errorf("error querying for Item with Key \"%v\": %v occurrences found", key, *resp.Count)
 	}
 
-	return models.NewItemFromDynamoDB(resp.Items[0])
+	return models.NewParsedItemFromDynamoDB(resp.Items[0])
 }

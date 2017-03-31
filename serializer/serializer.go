@@ -7,61 +7,61 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/diasjorge/dynamokv/models"
-	"github.com/diasjorge/dynamokv/parser"
 )
 
-func SerializeItems(svc *kms.KMS, items []*parser.Item) ([]*models.Item, error) {
+func SerializeItems(svc *kms.KMS, parsedItems []*models.ParsedItem) ([]*models.Item, error) {
 	result := []*models.Item{}
-	for _, item := range items {
-		value, err := serialize(svc, item.Value)
+	for _, parsedItem := range parsedItems {
+		item, err := SerializeItem(svc, parsedItem)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, &models.Item{
-			Key:           item.Key,
-			Value:         value,
-			Serialization: item.Value.Serialization.Type,
-		})
+		result = append(result, item)
 	}
 	return result, nil
 }
 
-func DeserializeItems(svc *kms.KMS, items []*models.Item, deserializeItem bool) error {
-	if deserializeItem {
-		for _, item := range items {
-			err := DeserializeItem(svc, item, deserializeItem)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func DeserializeItem(svc *kms.KMS, item *models.Item, deserializeItem bool) error {
-	if deserializeItem {
-		value, err := deserialize(svc, item)
-		if err != nil {
-			return err
-		}
-		item.Value = value
-	}
-	return nil
-}
-
-func encodeBase64(data []byte) string {
-	return base64.StdEncoding.EncodeToString(data)
-}
-
-func decodeBase64(data string) ([]byte, error) {
-	res, err := base64.StdEncoding.DecodeString(data)
+func SerializeItem(svc *kms.KMS, parsedItem *models.ParsedItem) (*models.Item, error) {
+	value, err := serialize(svc, parsedItem.Value)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return &models.Item{
+		Key:           parsedItem.Key,
+		Value:         value,
+		Serialization: parsedItem.Value.Serialization.Type,
+	}, nil
 }
 
-func serialize(svc *kms.KMS, value *parser.ItemValue) (string, error) {
+func DeserializeItems(svc *kms.KMS, parsedItems []*models.ParsedItem, deserializeItem bool) ([]*models.Item, error) {
+	items := []*models.Item{}
+	for _, parsedItem := range parsedItems {
+		item, err := DeserializeItem(svc, parsedItem, deserializeItem)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func DeserializeItem(svc *kms.KMS, parsedItem *models.ParsedItem, deserializeItem bool) (*models.Item, error) {
+	value := parsedItem.Value.Value
+	if deserializeItem {
+		deserializedValue, err := deserialize(svc, parsedItem)
+		if err != nil {
+			return nil, err
+		}
+		value = deserializedValue
+	}
+	return &models.Item{
+		Key:           parsedItem.Key,
+		Value:         value,
+		Serialization: parsedItem.Value.Serialization.Type,
+	}, nil
+}
+
+func serialize(svc *kms.KMS, value *models.ParsedItemValue) (string, error) {
 	switch value.Serialization.Type {
 	case "plain":
 		return value.Value, nil
@@ -83,18 +83,18 @@ func serialize(svc *kms.KMS, value *parser.ItemValue) (string, error) {
 
 }
 
-func deserialize(svc *kms.KMS, item *models.Item) (string, error) {
-	switch item.Serialization {
+func deserialize(svc *kms.KMS, item *models.ParsedItem) (string, error) {
+	switch item.Value.Serialization.Type {
 	case "plain":
-		return item.Value, nil
+		return item.Value.Value, nil
 	case "base64":
-		decoded, err := decodeBase64(item.Value)
+		decoded, err := decodeBase64(item.Value.Value)
 		if err != nil {
 			return "", err
 		}
 		return string(decoded), nil
 	case "kms":
-		decoded, err := decodeBase64(item.Value)
+		decoded, err := decodeBase64(item.Value.Value)
 		if err != nil {
 			return "", err
 		}
@@ -107,7 +107,19 @@ func deserialize(svc *kms.KMS, item *models.Item) (string, error) {
 		}
 		return string(resp.Plaintext), nil
 	default:
-		return "", fmt.Errorf("Unknown serialization type %s", item.Serialization)
+		return "", fmt.Errorf("Unknown serialization type %s", item.Value.Serialization.Type)
 
 	}
+}
+
+func encodeBase64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func decodeBase64(data string) ([]byte, error) {
+	res, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

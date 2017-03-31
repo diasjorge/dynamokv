@@ -54,12 +54,12 @@ func get(cmd *cobra.Command, args []string) error {
 
 	table := table.NewTable(session.DynamoDB, tableName)
 
-	item, err := table.Get(key)
+	parsedItem, err := table.Get(key)
 	if err != nil {
 		return err
 	}
 
-	err = serializer.DeserializeItem(session.KMS, item, deserialize)
+	item, err := serializer.DeserializeItem(session.KMS, parsedItem, deserialize)
 	if err != nil {
 		return err
 	}
