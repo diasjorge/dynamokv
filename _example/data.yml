@@ -1,0 +1,15 @@
+SIMPLE_KEY: VALUE GOES HERE
+SERIALIZED_KEY:
+  serialization: 'base64'
+  value: |
+    SOME LONG STRING
+    WITH MULTIPLE LINES
+ENCRYPTED_KEY:
+  serialization:
+    type: kms
+    options:
+      key: 'alias/key'
+  value: YOUR SECRET VALUE
+READ_FILE_KEY:
+  value:
+    file: 'config'

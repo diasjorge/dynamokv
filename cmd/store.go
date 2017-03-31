@@ -30,13 +30,9 @@ import (
 // storeCmd represents the store command
 var storeCmd = &cobra.Command{
 	Use:   "store TABLENAME CONFIG_FILE",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Store Key Value pairs and optionally serialize them into a dynamodb table",
+	Long: `Store Key Value pairs and optionally serialize them into a dynamodb table,
+`,
 	RunE: store,
 	// func(cmd *cobra.Command, args []string) {
 	//      // TODO: Work your own magic here
