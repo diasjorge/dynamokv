@@ -144,3 +144,7 @@ func (table *Table) Get(key string) (*models.ParsedItem, error) {
 
 	return models.NewParsedItemFromDynamoDB(resp.Items[0])
 }
+
+func (table *Table) Set(item *models.Item) error {
+	return table.Write([]*models.Item{item})
+}
