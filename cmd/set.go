@@ -33,7 +33,8 @@ import (
 // setCmd represents the set command
 var setCmd = &cobra.Command{
 	Use:   "set TABLENAME KEY VALUE",
-	Short: "Set Value for Key",
+	Short: "Set Key Value",
+	Long:  "Store Key Value into an AWS DynamoDB table.",
 	RunE:  setParse,
 }
 

@@ -31,7 +31,8 @@ import (
 // fetchCmd represents the fetch command
 var fetchCmd = &cobra.Command{
 	Use:   "fetch TABLENAME",
-	Short: "Retrieve Key Value Pairs from a dynamodb table",
+	Short: "Retrieve All Key Value Pairs",
+	Long:  "Retrieve All Key Value Pairs from a DynamoDB table",
 	RunE:  fetchParse,
 }
 

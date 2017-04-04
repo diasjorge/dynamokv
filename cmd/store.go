@@ -29,9 +29,28 @@ import (
 
 // storeCmd represents the store command
 var storeCmd = &cobra.Command{
-	Use:   "store TABLENAME CONFIG_FILE",
-	Short: "Store Key Value pairs and optionally serialize them into a dynamodb table",
-	RunE:  storeParse,
+	Use:   "store TABLENAME CONFIGFILE",
+	Short: "Store Key Value pairs from configuration file.",
+	Long: `Store Key Value pairs from configuration file into an AWS DynamoDB table.
+The configuration file format is as follows:
+
+SIMPLE_KEY: VALUE GOES HERE
+SERIALIZED_KEY:
+  serialization: 'base64'
+  value: |
+    SOME LONG STRING
+    WITH MULTIPLE LINES
+ENCRYPTED_KEY:
+  serialization:
+    type: kms
+    options:
+      key: 'alias/key'
+  value: YOUR SECRET VALUE
+READ_FILE_KEY:
+  value:
+    file: 'config'
+`,
+	RunE: storeParse,
 }
 
 func init() {

@@ -31,7 +31,8 @@ import (
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get TABLENAME KEY",
-	Short: "Retrieve Value of Key",
+	Short: "Retrieve Key Value",
+	Long:  "Retrieve Key Value from a DynamoDB table",
 	RunE:  getParse,
 }
 

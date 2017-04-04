@@ -36,7 +36,7 @@ import (
 // templateCmd represents the template command
 var templateCmd = &cobra.Command{
 	Use:   "template TABLENAME TEMPLATEFILE [OUTPUTFILE]",
-	Short: "Substitute placeholders with values from dynamodb",
+	Short: "Substitute placeholders with values from DynamoDB",
 	Long: `Replace placeholders for their value in an AWS DynamoDB table.
 Any key in between braces ("{{Key}}") is considered a placeholder.
 

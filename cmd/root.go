@@ -30,7 +30,7 @@ import (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "dynamokv",
-	Short: "Use AWS dynamodb as a simple Key Value storage",
+	Short: "Use AWS DynamoDB as a simple Key Value storage",
 	Long: `dynamokv is specially designed to store configuration in a dynamodb table
 and load them as environment variables`,
 	SilenceUsage: true,
