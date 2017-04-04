@@ -32,7 +32,7 @@ import (
 var fetchCmd = &cobra.Command{
 	Use:   "fetch TABLENAME",
 	Short: "Retrieve Key Value Pairs from a dynamodb table",
-	RunE:  fetch,
+	RunE:  fetchParse,
 }
 
 func init() {
@@ -41,15 +41,19 @@ func init() {
 	fetchCmd.Flags().BoolVarP(&deserialize, "deserialize", "", true, "Deserialize items")
 }
 
-func fetch(cmd *cobra.Command, args []string) error {
+func fetchParse(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("TABLENAME required")
 	}
 
 	tableName := args[0]
 
-	session := newSession()
+	session := newSession(region, profile, endpointURL)
 
+	return fetch(session, tableName, export, deserialize)
+}
+
+func fetch(session *Session, tableName string, export, deserialize bool) error {
 	table := table.NewTable(session.DynamoDB, tableName)
 
 	parsedItems, err := table.Read()

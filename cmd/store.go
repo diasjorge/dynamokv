@@ -31,31 +31,14 @@ import (
 var storeCmd = &cobra.Command{
 	Use:   "store TABLENAME CONFIG_FILE",
 	Short: "Store Key Value pairs and optionally serialize them into a dynamodb table",
-	Long: `Store Key Value pairs and optionally serialize them into a dynamodb table,
-`,
-	RunE: store,
-	// func(cmd *cobra.Command, args []string) {
-	//      // TODO: Work your own magic here
-	//      fmt.Println("store called")
-	// },
+	RunE:  storeParse,
 }
 
 func init() {
 	RootCmd.AddCommand(storeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// storeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// storeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 }
 
-func store(cmd *cobra.Command, args []string) error {
+func storeParse(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return cmd.Usage()
 	}
@@ -63,8 +46,12 @@ func store(cmd *cobra.Command, args []string) error {
 	tableName := args[0]
 	configFile := args[1]
 
-	session := newSession()
+	session := newSession(region, profile, endpointURL)
 
+	return store(session, tableName, configFile)
+}
+
+func store(session *Session, tableName, configFile string) error {
 	parsedItems, err := parser.Parse(configFile)
 	if err != nil {
 		return err

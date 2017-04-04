@@ -34,7 +34,7 @@ import (
 var setCmd = &cobra.Command{
 	Use:   "set TABLENAME KEY VALUE",
 	Short: "Set Value for Key",
-	RunE:  set,
+	RunE:  setParse,
 }
 
 type serializationFlag struct {
@@ -81,21 +81,27 @@ func init() {
 	setCmd.Flags().VarP(&serializationF, "serialization", "", "type::option:optionValue,*")
 }
 
-func set(cmd *cobra.Command, args []string) error {
+func setParse(cmd *cobra.Command, args []string) error {
 	if len(args) != 3 {
 		return fmt.Errorf("Invalid arguments\n%s", cmd.UsageString())
 	}
 	tableName, key, value := args[0], args[1], args[2]
 
-	session := newSession()
+	if serializationF.stype != "" {
+	}
 
+	session := newSession(region, profile, endpointURL)
+
+	return set(session, tableName, key, value, serializationF.stype, serializationF.options)
+}
+
+func set(session *Session, tableName, key, value, serializationType string, serializationOptions map[string]string) error {
 	parsedItem := models.NewParsedItem()
 	parsedItem.Key = key
 	parsedItem.Value.Value = value
-
-	if serializationF.stype != "" {
-		parsedItem.Value.Serialization.Type = serializationF.stype
-		parsedItem.Value.Serialization.Options = serializationF.options
+	if serializationType != "" {
+		parsedItem.Value.Serialization.Type = serializationType
+		parsedItem.Value.Serialization.Options = serializationOptions
 	}
 
 	item, err := serializer.SerializeItem(session.KMS, parsedItem)

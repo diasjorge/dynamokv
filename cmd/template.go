@@ -45,7 +45,7 @@ Placeholders accept the following modifiers:
   Example: "{{Username}}" will be replaced by the value of the "Username" Key.
   {{RAW:Key}}
   Example: "{{RAW:Username}}" will be replaced by the value of the "Username" Key without applying deserialization.`,
-	RunE: template,
+	RunE: templateParse,
 }
 
 func init() {
@@ -57,14 +57,14 @@ const modRaw = "RAW"
 
 var inplace bool
 
-func template(cmd *cobra.Command, args []string) error {
+func templateParse(cmd *cobra.Command, args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("Invalid arguments\n%s", cmd.UsageString())
 	}
 
-	outputFile := ""
-
 	tableName, templateFile := args[0], args[1]
+
+	outputFile := ""
 
 	if inplace {
 		outputFile = templateFile
@@ -77,8 +77,12 @@ func template(cmd *cobra.Command, args []string) error {
 		outputFile = args[2]
 	}
 
-	session := newSession()
+	session := newSession(region, profile, endpointURL)
 
+	return template(session, tableName, templateFile, outputFile)
+}
+
+func template(session *Session, tableName, templateFile, outputFile string) error {
 	template, err := ioutil.ReadFile(templateFile)
 	if err != nil {
 		return err

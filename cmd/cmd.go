@@ -38,9 +38,10 @@ type Session struct {
 	KMS      *kms.KMS
 }
 
-func newSession() *Session {
+func newSession(region, profile, endpointURL string) *Session {
+	config := aws.NewConfig().WithRegion(region)
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		Config:  aws.Config{Region: aws.String(region)},
+		Config:  *config,
 		Profile: profile,
 	}))
 

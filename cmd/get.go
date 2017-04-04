@@ -32,7 +32,7 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get TABLENAME KEY",
 	Short: "Retrieve Value of Key",
-	RunE:  get,
+	RunE:  getParse,
 }
 
 func init() {
@@ -42,7 +42,7 @@ func init() {
 	getCmd.Flags().BoolVarP(&deserialize, "deserialize", "", true, "Deserialize items")
 }
 
-func get(cmd *cobra.Command, args []string) error {
+func getParse(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return errors.New("TABLENAME KEY required")
 	}
@@ -50,8 +50,12 @@ func get(cmd *cobra.Command, args []string) error {
 	tableName := args[0]
 	key := args[1]
 
-	session := newSession()
+	session := newSession(region, profile, endpointURL)
 
+	return get(session, tableName, key, export, deserialize)
+}
+
+func get(session *Session, tableName, key string, export, deserialize bool) error {
 	table := table.NewTable(session.DynamoDB, tableName)
 
 	parsedItem, err := table.Get(key)
